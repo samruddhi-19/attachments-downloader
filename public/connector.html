@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+  <script>
+    TrelloPowerUp.initialize({
+      'board-buttons': function(t) {
+        return [{
+          text: 'Download Attachments',
+          icon: 'https://attachments-downloader.vercel.app/icon.svg',
+          callback: function(t) {
+            return t.popup({
+              title: 'Downloader',
+              url: 'https://attachments-downloader.vercel.app',
+              height: 200,
+            });
+          }
+        }];
+      }
+    });
+  </script>
+</body>
+</html>
