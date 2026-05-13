@@ -5,31 +5,26 @@
 </head>
 <body>
   <script>
-    var TRELLO_API_KEY = '4a96c23ac4cd6f8f9088b53390018b74';
-
-    TrelloPowerUp.initialize({
-      'board-buttons': function(t) {
-        return [{
-          text: 'Download Attachments',
-          icon: 'https://attachments-downloader.vercel.app/icon.svg',
-          callback: function(t) {
-            return t.getRestApi().isAuthorized().then(function(isAuthorized) {
-              if (!isAuthorized) {
-                return t.getRestApi().authorize({ scope: 'read' });
-              }
+    TrelloPowerUp.initialize(
+      {
+        'board-buttons': function(t) {
+          return [{
+            text: 'Download Attachments',
+            callback: function(t) {
               return t.popup({
                 title: 'Downloader',
                 url: 'https://attachments-downloader.vercel.app',
-                height: 200,
+                height: 200
               });
-            });
-          }
-        }];
+            }
+          }];
+        }
+      },
+      {
+        appKey: '4a96c23ac4cd6f8f9088b53390018b74',
+        appName: 'Attachments Downloader'
       }
-    }, {git
-      appKey: TRELLO_API_KEY,
-      appName: 'Attachments Downloader',
-    });
+    );
   </script>
 </body>
 </html>
