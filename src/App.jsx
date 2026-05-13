@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import JSZip from 'jszip'
 import './App.css'
 
+const TRELLO_API_KEY = '4a96c23ac4cd6f8f9088b53390018b74' 
+
 function App() {
-  const [status, setStatus] = useState('idle') // idle | loading | done | error
+  const [status, setStatus] = useState('idle')
   const [progress, setProgress] = useState(0)
   const [fileCount, setFileCount] = useState(0)
 
   useEffect(() => {
-    // Load Trello Power-Up client
     const script = document.createElement('script')
     script.src = 'https://p.trellocdn.com/power-up.min.js'
     script.onload = () => {
@@ -25,9 +26,19 @@ function App() {
       setStatus('loading')
       setProgress(10)
 
-      // Get all cards on the board
-      const board = await t.board('all')
-      const cards = await t.cards('all')
+      // Get board ID and token via REST API
+      const board = await t.board('id')
+      const token = await t.getRestApi().getToken()
+
+      setProgress(20)
+
+      // Fetch all cards with attachments
+      const cardsRes = await fetch(
+        `https://api.trello.com/1/boards/${board.id}/cards?attachments=true&key=${TRELLO_API_KEY}&token=${token}`
+      )
+      const cards = await cardsRes.json()
+
+      setProgress(30)
 
       // Collect all attachments
       const attachments = []
@@ -39,30 +50,27 @@ function App() {
         }
       }
 
-      setFileCount(attachments.length)
-      setProgress(30)
-
       if (attachments.length === 0) {
         setStatus('error')
         return
       }
 
-      // Download and ZIP all attachments
+      setFileCount(attachments.length)
+
+      // Download and ZIP
       const zip = new JSZip()
       let downloaded = 0
 
       for (const att of attachments) {
         const response = await fetch(att.url)
         const blob = await response.blob()
-        const fileName = `${att.cardName}/${att.name}`
-        zip.file(fileName, blob)
+        zip.file(`${att.cardName}/${att.name}`, blob)
         downloaded++
         setProgress(30 + Math.round((downloaded / attachments.length) * 60))
       }
 
       setProgress(95)
 
-      // Generate and trigger download
       const content = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(content)
       const a = document.createElement('a')
