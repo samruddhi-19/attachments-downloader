@@ -1,36 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <script src="https://p.trellocdn.com/power-up.min.js"></script>
-</head>
-<body>
-<script>
-  var TRELLO_API_KEY = 'YOUR_TRELLO_API_KEY'; // 👈 from trello.com/app-key
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <title>Attachments Downloader</title>
+  </head>
 
-  window.TrelloPowerUp.initialize({
+  <body>
+    <div id="root"></div>
 
-    'board-buttons': function(t) {
-      return [{
-        text: 'Download attachments',
-        icon: {
-          dark:  './icon.svg',
-          light: './icon.svg',
-        },
-        callback: function(t) {
-          return t.popup({
-            title:  'Downloader',
-            url:    './popup.html',
-            height: 80,
-          });
-        },
-      }];
-    },
-
-  }, {
-    appKey:  TRELLO_API_KEY,
-    appName: 'Attachments Downloader',
-  });
-</script>
-</body>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>

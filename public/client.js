@@ -6,7 +6,7 @@ window.TrelloPowerUp.initialize({
       callback: function(t) {
         return t.popup({
           title: 'Downloader',
-          url: './popup.html',
+          url: 'index.html',
           height: 200
         });
       }

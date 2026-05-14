@@ -1,103 +1,13 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
 
 <body>
-  <h3>Attachments Downloader</h3>
+  <div id="root"></div>
 
-  <button onclick="download()">Download Attachments</button>
-
-  <p id="status"></p>
-
-  <script>
-    const t = TrelloPowerUp.iframe({
-      appKey: "4a96c23ac4cd6f8f9088b53390018b74",
-      appName: "Attachments Downloader"
-    });
-
-    async function download() {
-      const status = document.getElementById("status");
-
-      try {
-        status.innerText = "Getting access...";
-
-        // ✅ Get token (or trigger auth if not present)
-        let token = await t.getRestApi().getToken();
-
-        if (!token) {
-          status.innerText = "Requesting authorization...";
-
-          await t.getRestApi().authorize({
-            scope: 'read',
-            expiration: 'never'
-          });
-
-          token = await t.getRestApi().getToken();
-        }
-
-        const board = await t.board("id");
-
-        status.innerText = "Fetching cards...";
-
-        const response = await fetch(
-          `https://api.trello.com/1/boards/${board.id}/cards?attachments=true&key=4a96c23ac4cd6f8f9088b53390018b74&token=${token}`
-        );
-
-        const cards = await response.json();
-
-        let attachments = [];
-
-        // ✅ Collect attachments
-        for (let card of cards) {
-          if (card.attachments && card.attachments.length > 0) {
-            for (let att of card.attachments) {
-              attachments.push(att);
-            }
-          }
-        }
-
-        if (attachments.length === 0) {
-          status.innerText = "No attachments found ❌";
-          return;
-        }
-
-        status.innerText = `Downloading ${attachments.length} files...`;
-
-        const zip = new JSZip();
-        let success = 0;
-
-        // ✅ Download files safely
-        for (let file of attachments) {
-          try {
-            const res = await fetch(t.signUrl(file.url));
-            const blob = await res.blob();
-
-            zip.file(file.name, blob);
-            success++;
-          } catch (e) {
-            console.log("Skipped:", file.name);
-          }
-        }
-
-        status.innerText = "Creating ZIP...";
-
-        const content = await zip.generateAsync({ type: "blob" });
-
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(content);
-        a.download = "attachments.zip";
-        a.click();
-
-        status.innerText = `Downloaded ${success} files ✅`;
-
-      } catch (err) {
-        console.error("ERROR:", err);
-        status.innerText = err.message || "Error occurred ❌";
-      }
-    }
-  </script>
+  <!-- React app loads here -->
+  <script type="module" src="/main.jsx"></script>
 </body>
 </html>

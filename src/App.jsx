@@ -8,14 +8,22 @@ function App() {
   const [status, setStatus] = useState('idle')
   const [progress, setProgress] = useState(0)
   const [fileCount, setFileCount] = useState(0)
+  const [isAuthorized, setIsAuthorized] = useState(false)
+useEffect(() => {
+  const script = document.createElement('script')
+  script.src = 'https://p.trellocdn.com/power-up.min.js'
 
-  const [isAuthorized, setIsAuthorized] = useState(null)
+  script.onload = async () => {
+    try {
+      // ✅ Ensure Trello exists
+      if (
+        !window.TrelloPowerUp ||
+        !window.TrelloPowerUp.iframe
+      ) {
+        console.log("Running outside Trello")
+        return
+      }
 
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://p.trellocdn.com/power-up.min.js'
-
-    script.onload = async () => {
       const t = window.TrelloPowerUp.iframe({
         appKey: TRELLO_API_KEY,
         appName: "Attachments Downloader"
@@ -23,26 +31,34 @@ function App() {
 
       window.trelloClient = t
 
+      // ✅ SAFE TOKEN CHECK
       try {
         const token = await t.getRestApi().getToken()
-
-        if (token) {
-          setIsAuthorized(true)
-        } else {
-          setIsAuthorized(false)
-        }
-      } catch (err) {
-        console.error(err)
+        setIsAuthorized(!!token)
+      } catch {
         setIsAuthorized(false)
       }
-    }
 
-    document.head.appendChild(script)
-  }, [])
+    } catch (err) {
+      console.error("Trello init failed:", err)
+    }
+  }
+
+  script.onerror = () => {
+    console.log("Script failed to load")
+  }
+
+  document.head.appendChild(script)
+}, [])
 
   // ✅ AUTHORIZE FUNCTION
   const handleAuthorize = async () => {
     const t = window.trelloClient
+
+    if (!t) {
+      alert("Not inside Trello")
+      return
+    }
 
     try {
       await t.getRestApi().authorize({
@@ -56,6 +72,7 @@ function App() {
     }
   }
 
+  // ✅ DOWNLOAD FUNCTION
   const handleDownload = async () => {
     const t = window.trelloClient
     if (!t) return
@@ -97,7 +114,6 @@ function App() {
 
       for (const att of attachments) {
         try {
-          // 🔥 IMPORTANT FIX (for next bug also)
           const response = await fetch(t.signUrl(att.url))
           const blob = await response.blob()
 
@@ -132,52 +148,81 @@ function App() {
   }
 
   return (
-  <div className="popup">
+    <div className="popup">
+      <div className="card">
 
-    <div className="card">
+        {!isAuthorized ? (
+          <>
+            <h3 className="title">Authorization</h3>
+            <p className="count">
+              We need your authorization to access attachments
+            </p>
 
-      <h3 className="title">Downloader</h3>
+            <button className="download-btn" onClick={handleAuthorize}>
+              Authorize
+            </button>
+          </>
+        ) : (
+          <>
+            <h3 className="title">Downloader</h3>
 
-      <p className="count">
-        {fileCount || 0} attachments (2.4 GB)
-      </p>
+            <p className="count">
+              {fileCount || 0} attachments (2.4 GB)
+            </p>
 
-      <div className="options">
+            <div className="options">
+              <label>
+                <input type="checkbox" defaultChecked />
+                Split attachments into list folders
+              </label>
 
-        <label>
-          <input type="checkbox" defaultChecked />
-          Split attachments into list folders
-        </label>
+              <label>
+                <input type="checkbox" defaultChecked />
+                Split attachments into card folders
+              </label>
 
-        <label>
-          <input type="checkbox" defaultChecked />
-          Split attachments into card folders
-        </label>
+              <label>
+                <input type="checkbox" />
+                Skip duplicate files
+              </label>
+            </div>
 
-        <label>
-          <input type="checkbox" />
-          Skip duplicate files
-        </label>
+            <div className="download-section">
+              <select>
+                <option>ZIP File (.zip)</option>
+                <option>Google Drive</option>
+                <option>Dropbox</option>
+                <option>OneDrive</option>
+              </select>
+            </div>
+
+            <button className="download-btn" onClick={handleDownload}>
+              Start download
+            </button>
+
+            {status === 'loading' && (
+              <p style={{ marginTop: '10px' }}>
+                Preparing download... {progress}%
+              </p>
+            )}
+
+            {status === 'done' && (
+              <p style={{ marginTop: '10px' }}>
+                ✅ Downloaded {fileCount} files
+              </p>
+            )}
+
+            {status === 'error' && (
+              <p style={{ marginTop: '10px' }}>
+                ❌ Error occurred
+              </p>
+            )}
+          </>
+        )}
 
       </div>
-
-      <div className="download-section">
-        <select>
-          <option>ZIP File (.zip)</option>
-          <option>Google Drive</option>
-          <option>Dropbox</option>
-          <option>OneDrive</option>
-        </select>
-      </div>
-
-      <button className="download-btn" onClick={handleDownload}>
-        Start download
-      </button>
-
     </div>
-
-  </div>
-)
+  )
 }
 
 export default App
