@@ -1,13 +1,36 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>attachments-downloader</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://p.trellocdn.com/power-up.min.js"></script>
+</head>
+<body>
+<script>
+  var TRELLO_API_KEY = 'YOUR_TRELLO_API_KEY'; // 👈 from trello.com/app-key
+
+  window.TrelloPowerUp.initialize({
+
+    'board-buttons': function(t) {
+      return [{
+        text: 'Download attachments',
+        icon: {
+          dark:  './icon.svg',
+          light: './icon.svg',
+        },
+        callback: function(t) {
+          return t.popup({
+            title:  'Downloader',
+            url:    './popup.html',
+            height: 80,
+          });
+        },
+      }];
+    },
+
+  }, {
+    appKey:  TRELLO_API_KEY,
+    appName: 'Attachments Downloader',
+  });
+</script>
+</body>
 </html>

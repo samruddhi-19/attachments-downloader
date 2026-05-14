@@ -2,29 +2,7 @@
 <html>
 <head>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="/client.js"></script>
 </head>
-<body>
-  <script>
-    TrelloPowerUp.initialize(
-      {
-        'board-buttons': function(t) {
-          return [{
-            text: 'Download Attachments',
-            callback: function(t) {
-              return t.popup({
-                title: 'Downloader',
-                url: 'https://attachments-downloader.vercel.app',
-                height: 200
-              });
-            }
-          }];
-        }
-      },
-      {
-        appKey: '4a96c23ac4cd6f8f9088b53390018b74',
-        appName: 'Attachments Downloader'
-      }
-    );
-  </script>
-</body>
+<body></body>
 </html>

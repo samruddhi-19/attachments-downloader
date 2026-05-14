@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import JSZip from 'jszip'
 import './App.css'
 
-const TRELLO_API_KEY = '4a96c23ac4cd6f8f9088b53390018b74' 
+const TRELLO_API_KEY = import.meta.env.VITE_TRELLO_API_KEY
 
 function App() {
   const [status, setStatus] = useState('idle')
