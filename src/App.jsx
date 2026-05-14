@@ -9,7 +9,7 @@ function App() {
   const [progress, setProgress] = useState(0)
   const [fileCount, setFileCount] = useState(0)
 
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(null)
 
   useEffect(() => {
     const script = document.createElement('script')
@@ -23,28 +23,37 @@ function App() {
 
       window.trelloClient = t
 
-      const token = await t.getRestApi().getToken()
-      console.log("Token:", token)
+      try {
+        const token = await t.getRestApi().getToken()
 
-      if (token) {
-        setIsAuthorized(true)
+        if (token) {
+          setIsAuthorized(true)
+        } else {
+          setIsAuthorized(false)
+        }
+      } catch (err) {
+        console.error(err)
+        setIsAuthorized(false)
       }
     }
 
     document.head.appendChild(script)
   }, [])
 
-  // 🔥 STEP 3 — AUTHORIZE FUNCTION
+  // ✅ AUTHORIZE FUNCTION
   const handleAuthorize = async () => {
     const t = window.trelloClient
-    if (!t) return
 
-    await t.getRestApi().authorize({
-      scope: 'read',
-      expiration: 'never'
-    })
+    try {
+      await t.getRestApi().authorize({
+        scope: 'read',
+        expiration: 'never'
+      })
 
-    setIsAuthorized(true)
+      setIsAuthorized(true)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
   const handleDownload = async () => {
@@ -87,69 +96,81 @@ function App() {
       let downloaded = 0
 
       for (const att of attachments) {
-        const response = await fetch(att.url)
-        const blob = await response.blob()
-        zip.file(`${att.cardName}/${att.name}`, blob)
-        downloaded++
-        setProgress(30 + Math.round((downloaded / attachments.length) * 60))
+        try {
+          // 🔥 IMPORTANT FIX (for next bug also)
+          const response = await fetch(t.signUrl(att.url))
+          const blob = await response.blob()
+
+          zip.file(`${att.cardName}/${att.name}`, blob)
+
+          downloaded++
+          setProgress(30 + Math.round((downloaded / attachments.length) * 60))
+        } catch (e) {
+          console.log("Skipped:", att.name)
+        }
       }
 
       setProgress(95)
 
       const content = await zip.generateAsync({ type: 'blob' })
       const url = URL.createObjectURL(content)
+
       const a = document.createElement('a')
       a.href = url
       a.download = 'trello-attachments.zip'
       a.click()
+
       URL.revokeObjectURL(url)
 
       setProgress(100)
       setStatus('done')
+
     } catch (err) {
       console.error(err)
       setStatus('error')
     }
   }
 
-  // 🔥 STEP 3 — UI CONTROL
   return (
     <div className="container">
 
-      {!isAuthorized ? (
+      {/* 🔄 Loading */}
+      {isAuthorized === null && <p>Loading...</p>}
+
+      {/* ❌ Not Authorized */}
+      {isAuthorized === false && (
         <>
-          <h3>Authorization</h3>
-          <p>We need your authorization to access attachments.</p>
+          <p>Please authorize to continue</p>
           <button onClick={handleAuthorize}>Authorize</button>
         </>
-      ) : (
+      )}
 
+      {/* ✅ Authorized */}
+      {isAuthorized === true && status === 'idle' && (
         <>
-          {status === 'idle' && (
-            <>
-              <p>Download all attachments from this board as a ZIP file.</p>
-              <button onClick={handleDownload}>Download Attachments</button>
-            </>
-          )}
-
-          {status === 'loading' && (
-            <>
-              <p>Preparing download... {progress}%</p>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{ width: `${progress}%` }} />
-              </div>
-              <small>Do not close this popup.</small>
-            </>
-          )}
-
-          {status === 'done' && (
-            <p>✅ Downloaded {fileCount} attachments!</p>
-          )}
-
-          {status === 'error' && (
-            <p>❌ No attachments found or an error occurred.</p>
-          )}
+          <p>Download all attachments from this board</p>
+          <button onClick={handleDownload}>Download Attachments</button>
         </>
+      )}
+
+      {/* ⏳ Loading */}
+      {status === 'loading' && (
+        <>
+          <p>Preparing download... {progress}%</p>
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+        </>
+      )}
+
+      {/* ✅ Done */}
+      {status === 'done' && (
+        <p>✅ Downloaded {fileCount} attachments!</p>
+      )}
+
+      {/* ❌ Error */}
+      {status === 'error' && (
+        <p>❌ No attachments found or error occurred</p>
       )}
 
     </div>
