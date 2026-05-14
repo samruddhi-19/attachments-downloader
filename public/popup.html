@@ -2,15 +2,66 @@
 <html>
 <head>
   <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
 
 <body>
   <h3>Attachments Downloader</h3>
-  <button onclick="test()">Click Me</button>
+
+  <button onclick="download()">Download Attachments</button>
+
+  <p id="status"></p>
 
   <script>
-    function test() {
-      alert("Popup working ✅");
+    const t = TrelloPowerUp.iframe();
+
+    async function download() {
+      const status = document.getElementById("status");
+
+      try {
+        status.innerText = "Fetching cards...";
+
+        const cards = await t.cards('id', 'name');
+
+        let attachments = [];
+
+        for (let card of cards) {
+          const data = await t.card(card.id, 'attachments');
+          attachments.push(...data.attachments);
+        }
+
+        if (attachments.length === 0) {
+          status.innerText = "No attachments found ❌";
+          return;
+        }
+
+        status.innerText = "Downloading files...";
+
+        const zip = new JSZip();
+
+        for (let file of attachments) {
+          const url = t.signUrl(file.url); // IMPORTANT
+          const res = await fetch(url);
+          const blob = await res.blob();
+
+          zip.file(file.name, blob);
+        }
+
+        status.innerText = "Creating ZIP...";
+
+        const content = await zip.generateAsync({ type: "blob" });
+
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = "attachments.zip";
+        a.click();
+
+        status.innerText = "Download complete ✅";
+
+      } catch (err) {
+        console.error(err);
+        status.innerText = "Error occurred ❌";
+      }
     }
   </script>
 </body>
