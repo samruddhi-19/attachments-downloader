@@ -132,49 +132,52 @@ function App() {
   }
 
   return (
-    <div className="container">
+  <div className="popup">
 
-      {/* 🔄 Loading */}
-      {isAuthorized === null && <p>Loading...</p>}
+    <div className="card">
 
-      {/* ❌ Not Authorized */}
-      {isAuthorized === false && (
-        <>
-          <p>Please authorize to continue</p>
-          <button onClick={handleAuthorize}>Authorize</button>
-        </>
-      )}
+      <h3 className="title">Downloader</h3>
 
-      {/* ✅ Authorized */}
-      {isAuthorized === true && status === 'idle' && (
-        <>
-          <p>Download all attachments from this board</p>
-          <button onClick={handleDownload}>Download Attachments</button>
-        </>
-      )}
+      <p className="count">
+        {fileCount || 0} attachments (2.4 GB)
+      </p>
 
-      {/* ⏳ Loading */}
-      {status === 'loading' && (
-        <>
-          <p>Preparing download... {progress}%</p>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-        </>
-      )}
+      <div className="options">
 
-      {/* ✅ Done */}
-      {status === 'done' && (
-        <p>✅ Downloaded {fileCount} attachments!</p>
-      )}
+        <label>
+          <input type="checkbox" defaultChecked />
+          Split attachments into list folders
+        </label>
 
-      {/* ❌ Error */}
-      {status === 'error' && (
-        <p>❌ No attachments found or error occurred</p>
-      )}
+        <label>
+          <input type="checkbox" defaultChecked />
+          Split attachments into card folders
+        </label>
+
+        <label>
+          <input type="checkbox" />
+          Skip duplicate files
+        </label>
+
+      </div>
+
+      <div className="download-section">
+        <select>
+          <option>ZIP File (.zip)</option>
+          <option>Google Drive</option>
+          <option>Dropbox</option>
+          <option>OneDrive</option>
+        </select>
+      </div>
+
+      <button className="download-btn" onClick={handleDownload}>
+        Start download
+      </button>
 
     </div>
-  )
+
+  </div>
+)
 }
 
 export default App
