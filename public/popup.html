@@ -8,9 +8,6 @@
 <body>
   <h3>Attachments Downloader</h3>
 
-  <button onclick="authorize()">Authorize</button>
-  <br><br>
-
   <button onclick="download()">Download Attachments</button>
 
   <p id="status"></p>
@@ -21,29 +18,24 @@
       appName: "Attachments Downloader"
     });
 
-    async function authorize() {
-      try {
-        await t.getRestApi().authorize({
-          scope: 'read',
-          expiration: 'never'
-        });
-        document.getElementById("status").innerText = "Authorized ✅";
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
     async function download() {
       const status = document.getElementById("status");
 
       try {
         status.innerText = "Getting access...";
 
+        // ✅ Get token (or trigger auth if not present)
         let token = await t.getRestApi().getToken();
 
         if (!token) {
-          status.innerText = "Click Authorize first ⚠️";
-          return;
+          status.innerText = "Requesting authorization...";
+
+          await t.getRestApi().authorize({
+            scope: 'read',
+            expiration: 'never'
+          });
+
+          token = await t.getRestApi().getToken();
         }
 
         const board = await t.board("id");
@@ -58,6 +50,7 @@
 
         let attachments = [];
 
+        // ✅ Collect attachments
         for (let card of cards) {
           if (card.attachments && card.attachments.length > 0) {
             for (let att of card.attachments) {
@@ -76,10 +69,12 @@
         const zip = new JSZip();
         let success = 0;
 
+        // ✅ Download files safely
         for (let file of attachments) {
           try {
             const res = await fetch(t.signUrl(file.url));
             const blob = await res.blob();
+
             zip.file(file.name, blob);
             success++;
           } catch (e) {
@@ -99,7 +94,7 @@
         status.innerText = `Downloaded ${success} files ✅`;
 
       } catch (err) {
-        console.error(err);
+        console.error("ERROR:", err);
         status.innerText = err.message || "Error occurred ❌";
       }
     }
