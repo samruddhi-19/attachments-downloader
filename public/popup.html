@@ -13,7 +13,10 @@
   <p id="status"></p>
 
   <script>
-    const t = TrelloPowerUp.iframe();
+   const t = TrelloPowerUp.iframe({
+  appKey: "4a96c23ac4cd6f8f9088b53390018b74",
+  appName: "Attachments Downloader"
+});
 
     async function download() {
       const status = document.getElementById("status");
