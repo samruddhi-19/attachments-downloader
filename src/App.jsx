@@ -9,14 +9,43 @@ function App() {
   const [progress, setProgress] = useState(0)
   const [fileCount, setFileCount] = useState(0)
 
+  const [isAuthorized, setIsAuthorized] = useState(false)
+
   useEffect(() => {
     const script = document.createElement('script')
     script.src = 'https://p.trellocdn.com/power-up.min.js'
-    script.onload = () => {
-      window.trelloClient = window.TrelloPowerUp.iframe()
+
+    script.onload = async () => {
+      const t = window.TrelloPowerUp.iframe({
+        appKey: TRELLO_API_KEY,
+        appName: "Attachments Downloader"
+      })
+
+      window.trelloClient = t
+
+      const token = await t.getRestApi().getToken()
+      console.log("Token:", token)
+
+      if (token) {
+        setIsAuthorized(true)
+      }
     }
+
     document.head.appendChild(script)
   }, [])
+
+  // 🔥 STEP 3 — AUTHORIZE FUNCTION
+  const handleAuthorize = async () => {
+    const t = window.trelloClient
+    if (!t) return
+
+    await t.getRestApi().authorize({
+      scope: 'read',
+      expiration: 'never'
+    })
+
+    setIsAuthorized(true)
+  }
 
   const handleDownload = async () => {
     const t = window.trelloClient
@@ -26,13 +55,11 @@ function App() {
       setStatus('loading')
       setProgress(10)
 
-      // Get board ID and token via REST API
       const board = await t.board('id')
       const token = await t.getRestApi().getToken()
 
       setProgress(20)
 
-      // Fetch all cards with attachments
       const cardsRes = await fetch(
         `https://api.trello.com/1/boards/${board.id}/cards?attachments=true&key=${TRELLO_API_KEY}&token=${token}`
       )
@@ -40,7 +67,6 @@ function App() {
 
       setProgress(30)
 
-      // Collect all attachments
       const attachments = []
       for (const card of cards) {
         if (card.attachments && card.attachments.length > 0) {
@@ -57,7 +83,6 @@ function App() {
 
       setFileCount(attachments.length)
 
-      // Download and ZIP
       const zip = new JSZip()
       let downloaded = 0
 
@@ -87,32 +112,46 @@ function App() {
     }
   }
 
+  // 🔥 STEP 3 — UI CONTROL
   return (
     <div className="container">
-      {status === 'idle' && (
+
+      {!isAuthorized ? (
         <>
-          <p>Download all attachments from this board as a ZIP file.</p>
-          <button onClick={handleDownload}>Download Attachments</button>
+          <h3>Authorization</h3>
+          <p>We need your authorization to access attachments.</p>
+          <button onClick={handleAuthorize}>Authorize</button>
+        </>
+      ) : (
+
+        <>
+          {status === 'idle' && (
+            <>
+              <p>Download all attachments from this board as a ZIP file.</p>
+              <button onClick={handleDownload}>Download Attachments</button>
+            </>
+          )}
+
+          {status === 'loading' && (
+            <>
+              <p>Preparing download... {progress}%</p>
+              <div className="progress-bar">
+                <div className="progress-fill" style={{ width: `${progress}%` }} />
+              </div>
+              <small>Do not close this popup.</small>
+            </>
+          )}
+
+          {status === 'done' && (
+            <p>✅ Downloaded {fileCount} attachments!</p>
+          )}
+
+          {status === 'error' && (
+            <p>❌ No attachments found or an error occurred.</p>
+          )}
         </>
       )}
 
-      {status === 'loading' && (
-        <>
-          <p>Preparing download... {progress}%</p>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-          <small>Do not close this popup.</small>
-        </>
-      )}
-
-      {status === 'done' && (
-        <p>✅ Downloaded {fileCount} attachments!</p>
-      )}
-
-      {status === 'error' && (
-        <p>❌ No attachments found or an error occurred.</p>
-      )}
     </div>
   )
 }
