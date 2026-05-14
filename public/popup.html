@@ -91,9 +91,9 @@
         status.innerText = `Download complete ✅ (${successCount} files)`;
 
       } catch (err) {
-        console.error("ERROR:", err);
-        status.innerText = "Error occurred ❌";
-      }
+  console.error("FULL ERROR:", err);
+  status.innerText = err.message || "Error occurred ❌";
+}
     }
   </script>
 </body>
